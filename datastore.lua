@@ -1,0 +1,1 @@
+CHDMP = CHDMP or {}

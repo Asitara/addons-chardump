@@ -1,0 +1,13 @@
+## Interface: 40300
+## Title: |cff69ccff<Assasinen> Chardump|r
+## Author: Myth, reforged by Nashara[Asitara] Gilde: <Assasinen>.
+## Notes: |TEnvironments\Stars\Nexus_data_curtain_blur:180:120|t
+## Version: 1.0
+## SavedVariables: CHDMP_DATA
+
+luaglobal.lua
+
+json\json.lua
+
+datastore.lua
+Chardump.lua
