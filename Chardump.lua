@@ -3,13 +3,11 @@ CHDMP = CHDMP or {}
 local private = {}
 
 
-
-
------------------------------------ GLOBAL
+------------------------------------------ GLOBAL
 function private.GetGlobalInfo()
 	local retTbl = {}
 
-	local version, _, date	= GetBuildInfo();
+	local version			= GetBuildInfo();
 	local _, class          = UnitClass("player");
 	local _, race           = UnitRace("player");
 	local il_all, il_eq		= GetAverageItemLevel()
@@ -20,7 +18,7 @@ function private.GetGlobalInfo()
 	retTbl.race             = race;
 	retTbl.class            = class;
 	retTbl.level            = UnitLevel("player");
-	retTbl.date				= date;
+	retTbl.date				= notfalls time()
 	retTbl.ilevel_equipped	= il_eq;
 	retTbl.ilevel_overall	= il_all;
 	retTbl.money            = GetMoney();
@@ -31,29 +29,29 @@ function private.GetGlobalInfo()
 	private.ILog("Global Infos DONE...");
 	return retTbl;
 end
------------------------------------ PROPERTIES
+------------------------------------------ PROPERTIES
 function private.GetPropertiesData()
 	local retTbl = {}
 
 	for i = 1, 5, 1 do -- Attributes
 		base, stat, posBuff, negBuff = UnitStat("player", i);
-		retTbl['attributes'] = { stat }
+		retTbl['attributes'] = {[i] = stat }
 	end
 
 	for i = 1, 26, 1 do -- Combat
 		value = GetCombatRating(6);
-		retTbl['combat'] = {}
+		retTbl['combat'] = {[i] = value }
 	end
 
 	for i = 1, 6, 1 do -- Resistance
 		base = UnitResistance("player", i);
-		retTbl['resistance'] = {}
+		retTbl['resistance'] = {[i] = base }
 	end
 
 	private.ILog("Properties DONE...");
     return retTbl
 end
------------------------------------ TITLES
+------------------------------------------ TITLES
 function private.GetTitlesData()
     local retTbl = {}
 
@@ -67,7 +65,7 @@ function private.GetTitlesData()
     private.ILog("Titles DONE...");
     return retTbl
 end
------------------------------------ REPUTATION
+------------------------------------------ REPUTATION
 function private.GetReputationData()
     local retTbl = {}
 
@@ -79,7 +77,7 @@ function private.GetReputationData()
     private.ILog("Reputation DONE...");
     return retTbl;
 end
------------------------------------ CURRENCIES
+------------------------------------------ CURRENCIES
 function private.GetCurrenciesData()
     local retTbl = {}
 
@@ -91,79 +89,55 @@ function private.GetCurrenciesData()
 	private.ILog("Currencies DONE...");
     return retTbl;
 end
------------------------------------ TALENTS
+------------------------------------------ TALENTS
 function private.GetTalentsData()
 	local retTbl = {}
 
-	local numTabs,numPts,state,petName;
-	local numSpecs = GetNumTalentTabs(false, false);
-	local structTalent={};
-	local structTalents={};
+	local talentGroupName = 'primary';
 
-	xstat={Talents={}};
+	for talentGroup = 1, 2 do -- loop 1 = PRIMARY, 2 = SECONDARY
+		if (talentGroup == 2) then talentGroupName = 'secondary'; end
 
-	numSpecGroups = GetNumTalentGroups(false, false);
-	state = "Talents";
-	local tabName,iconTexture,pointsSpent,background;
-	local cnt=0;
-	local nameTalent,iconTexture,tier,column,currentRank,maxRank,isExceptional,meetsPrereq;
+		tabIndex = GetPrimaryTalentTree(false, false, talentGroup) -- get tabIndex for primary/secondary
+		spec_id, spec_name, _, _, _, points = GetTalentTabInfo(tabIndex);
+		retTbl[talentGroupName] = {
+					['id'] = spec_id,
+					['name'] = spec_name,
+					['points'] = points,
+					['talents'] = {},
+					['glyphs'] = {}
+		}
+		for talentIndex = 1, GetNumTalents(tabIndex) do
+			name, icon, row, column, points, max_points = GetTalentInfo(tabIndex, talentIndex, false);
+			retTbl[talentGroupName]['talents'][icon] = {
+										['name'] = name,
+										['row'] = row,
+										['column'] = column,
+										['points'] = points,
+										['max_points'] = max_points,
+			}
+		end
 
-	for i = 1, numSpecGroups do
-	   tindex = i;
-	   structTalent[tindex]={};
-	   if (GetActiveTalentGroup(false, false) == i) then
-		  Act = true;
-	   else
-		  Act = false;
-	   end
-	   local id, sname, description, sicon, background= GetTalentTabInfo(i);
+		for glyphSocket = 1, GetNumGlyphSockets() do
+			enabled, glyphType, glyphTooltipIndex, glyphSpell, icon = GetGlyphSocketInfo(glyphSocket, talentGroup);
+			if(enabled == 1 and glyphSpell) then
+				name, rank, icon, powerCost, isFunnel, powerType, castingTime, minRange, maxRange = GetSpellInfo(glyphSpell)
+				retTbl[talentGroupName]['glyphs'][glyphSocket] = {
+					['id']	 = glyphSpell,
+					['name'] = name,
+					['type'] = glyphType
+				}
+			else
+				retTbl[talentGroupName]['glyphs'][glyphSocket] = nil;
 
-	   structTalent[tindex]={
-		  Name        =    sname,
-		  Desc         =    description,
-		  Active        =    Act,
-	   };
-	   structTalent[tindex]["Talents"] = {};
-	   for talentIndex=1,18 do
-
-
-
-
-		  name, iconTexture, tier, column, selected, available = GetTalentInfo(i, talentIndex, false);
-
-		  if( name ) then
-			 structTalent[tindex]["Talents"][name]={
-				Location    = strjoin(":", tier,column),
-				Selected    =    selected,
-				Available    =    available,
-				Name        =    name,
-			 };
-		  end
-	   end
-	   local structGlyphs={};
-	   structTalent[tindex]["Glyphs"] = {};
-	   for index=1, GetNumGlyphSockets() do
-		  local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon = GetGlyphSocketInfo(index,i);
-		  if(enabled == 1 and glyphSpell) then
-			 name, rank, icon, powerCost, isFunnel, powerType, castingTime, minRange, maxRange = GetSpellInfo(glyphSpell)
-			 structGlyphs[index] = {
-				Name    = name,
-				Type    = glyphType,
-			 };
-		  else
-			 structGlyphs[index] = nil;
-		  end
-	   end
-	   structTalent[tindex]["Glyphs"] = structGlyphs;
-
+			end
+		end
 	end
-
-	retTbl = structTalent;
 
 	private.ILog("Talents DONE...");
     return retTbl;
 end
------------------------------------ PROFESSIONS
+------------------------------------------ PROFESSIONS
 function private.GetProfessionsData()
 	local retTbl = {}
 
@@ -177,7 +151,7 @@ function private.GetProfessionsData()
 	private.ILog("Profesions DONE...");
     return retTbl;
 end
------------------------------------ MOUNTS
+------------------------------------------ MOUNTS
 function private.GetMountsData()
     local retTbl = {}
 
@@ -189,7 +163,7 @@ function private.GetMountsData()
     private.ILog("Mounts DONE...");
     return retTbl;
 end
------------------------------------ CRITTERS
+------------------------------------------ CRITTERS
 function private.GetCrittersData()
     local retTbl = {}
 
@@ -201,7 +175,7 @@ function private.GetCrittersData()
     private.ILog("Critters DONE...");
     return retTbl;
 end
------------------------------------ ACHIEVEMENTS
+------------------------------------------ ACHIEVEMENTS
 function private.GetAchievementsData()
     local retTbl = {}
 
@@ -209,7 +183,7 @@ function private.GetAchievementsData()
 
 	for a, categoryID in pairs(GetCategoryList()) do
 		for i = 1 , GetCategoryNumAchievements(categoryID) do
-			achID, name, points, completed, month, day, year, _, flags, _, _, isGuild = GetAchievementInfo(categoryID, index)
+			achID, name, points, completed, Month, Day, Year, _, flags, _, _, isGuild = GetAchievementInfo(categoryID, i)
 			if achID and not isGuild then
 				local posixtime = 0
 
@@ -233,7 +207,7 @@ function private.GetAchievementsData()
     private.ILog("Achievements DONE...");
     return retTbl;
 end
------------------------------------ STATISTICS
+------------------------------------------ STATISTICS
 function private.GetStatisticsData()
     local retTbl = {}
 
@@ -253,7 +227,7 @@ function private.GetStatisticsData()
     private.ILog("Statistics DONE...");
     return retTbl;
 end
------------------------------------ TITLE
+------------------------------------------ TITLE
 
 
 
@@ -265,16 +239,16 @@ function private.CreateCharDump()
 	private.dmp = {};
 
 	private.dmp.global		= private.trycall(private.GetGlobalInfo, private.ErrLog)		or {};
---B	private.dmp.properties	= private.trycall(private.GetPropertiesData, private.ErrLog)	or {};	-- Bug
---	private.dmp.titles		= private.trycall(private.GetTitlesData, private.ErrLog)		or {};
---	private.dmp.reputation	= private.trycall(private.GetReputationData, private.ErrLog)	or {};
---	private.dmp.currencies	= private.trycall(private.GetCurrenciesData, private.ErrLog)	or {};
-	private.dmp.talents		= private.trycall(private.GetTalentsData, private.ErrLog)	or {};	-- Testphase
---	private.dmp.professions = private.trycall(private.GetProfessionsData, private.ErrLog)	or {};
---	private.dmp.mounts		= private.trycall(private.GetMountsData, private.ErrLog)		or {};
---	private.dmp.critters	= private.trycall(private.GetCrittersData, private.ErrLog)		or {};
---T	private.dmp.achievements = private.trycall(private.GetAchievementsData, private.ErrLog)	or {};	-- Testphase
---	private.dmp.statistics	= private.trycall(private.GetStatisticsData, private.ErrLog)	or {};
+	private.dmp.properties	= private.trycall(private.GetPropertiesData, private.ErrLog)	or {};
+	private.dmp.titles		= private.trycall(private.GetTitlesData, private.ErrLog)		or {};
+	private.dmp.reputation	= private.trycall(private.GetReputationData, private.ErrLog)	or {};
+	private.dmp.currencies	= private.trycall(private.GetCurrenciesData, private.ErrLog)	or {};
+	private.dmp.talents		= private.trycall(private.GetTalentsData, private.ErrLog)		or {};
+	private.dmp.professions = private.trycall(private.GetProfessionsData, private.ErrLog)	or {};
+	private.dmp.mounts		= private.trycall(private.GetMountsData, private.ErrLog)		or {};
+	private.dmp.critters	= private.trycall(private.GetCrittersData, private.ErrLog)		or {};
+	private.dmp.achievements = private.trycall(private.GetAchievementsData, private.ErrLog)	or {};	-- Testphase
+	private.dmp.statistics	= private.trycall(private.GetStatisticsData, private.ErrLog)	or {};
 --D	private.dmp.quest       = private.trycall(private.GetQuestData, private.ErrLog)			or {};	-- Development
 --D	private.dmp.inventory   = private.trycall(private.GetIData, private.ErrLog)				or {};	-- Development
 
