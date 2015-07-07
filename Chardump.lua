@@ -3,8 +3,8 @@ CHDMP = CHDMP or {}
 local private = {}
 
 
------------------------------------------- GLOBAL
-function private.GetGlobalInfo()
+
+function private.GetGlobalInfo() --------- GLOBAL
 	local retTbl = {}
 
 	local _, class          = UnitClass("player");
@@ -30,79 +30,74 @@ function private.GetGlobalInfo()
 	private.ILog("Global Infos DONE...");
 	return retTbl;
 end
------------------------------------------- PROPERTIES
-function private.GetPropertiesData()
-	local retTbl = {}
 
-	-- General
+function private.GetStatsData() ---------- STATS
 	local il_all, il_eq = GetAverageItemLevel()
-	retTbl['general'] = {
-		['health'] = UnitHealthMax("player");
-		['power'] = UnitPowerMax("player");
-		['ilevel_equipped'] = il_eq;
-		['ilevel_overall'] = il_all;
+
+	local minMainDmg, maxMainDmg, minOffDmg, minMaxDmg = UnitDamage("player")
+	local MainSpeed, OffSpeed = UnitAttackSpeed("player")
+
+	retTbl = {
+		['health'] = UnitHealthMax("player"),
+		['power'] = UnitPowerMax("player"),
+		['averageItemLevel'] = il_all,
+		['averageItemLevelEquipped'] = il_eq,
+
+		['str'] = UnitStat("player", 1),
+		['agi'] = UnitStat("player", 2),
+		['sta'] = UnitStat("player", 3),
+		['int'] = UnitStat("player", 4),
+		['spr'] = UnitStat("player", 5),
+
+		['mainHandDmgMin'] = minMainDmg,
+		['mainHandDmgMax'] = maxMainDmg,
+		['mainHandSpeed'] = MainSpeed,
+		['offHandDmgMax'] = minOffDmg,
+		['offHandDmgMin'] = minMaxDmg,
+		['offHandSpeed'] = OffSpeed,
+		['meleeAttackPower'] = UnitAttackPower("player"),
+		['meleeHaste'] = GetCombatRating(CR_HASTE_MELEE),
+		['meleeHit'] = GetCombatRating(CR_HIT_MELEE),
+		['meleeCrit'] = GetCritChance(),
+		['meleeExp'] = GetExpertise(),
+
+		['rangeDmgMin'] = minRangeDmg,
+		['rangeDmgMax'] = maxRangeDmg,
+		['rangeSpeed'] = RangeSpeed,
+		['rangeHaste'] = GetCombatRating(CR_HASTE_RANGED),
+		--['rangeFocusReg'] = , -- maybe inactiveRegen, activeRegen = GetPowerRegen()
+		['rangeHit'] = GetCombatRating(CR_HIT_RANGED),
+		['rangeCrit'] = GetRangedCritChance(),
+
+		['spellBonusDmg'] = GetSpellBonusDamage(2),
+		['spellBonusHealing'] = GetSpellBonusHealing(),
+		['spellHaste'] = GetCombatRating(CR_HASTE_SPELL),
+		['spellHit'] = GetCombatRating(CR_HIT_SPELL),
+		['spellPen'] = GetSpellPenetration(),
+		['mana5'] = floor(GetManaRegen() * 5.0),
+		['spellCrit'] = GetSpellCritChance(2),
+
+		['armor'] = UnitArmor("player"),
+		['dodge'] = GetDodgeChance(),
+		['parry'] = GetParryChance(),
+		['block'] = GetBlockChance(),
+		['resilience'] = GetCombatRating(COMBAT_RATING_RESILIENCE_PLAYER_DAMAGE_TAKEN),
+
+		['resistHoly'] = UnitResistance("player", 1),
+		['resistFire'] = UnitResistance("player", 2),
+		['resistNature'] = UnitResistance("player", 3),
+		['resistFrost'] = UnitResistance("player", 4),
+		['resistShadow'] = UnitResistance("player", 5),
+		['resistArcane'] = UnitResistance("player", 6),
+
+		['mastery'] = GetCombatRating(CR_MASTERY),
 	}
 
-	-- Attributes
-	retTbl['attributes'] = {}
-	for i = 1, 5, 1 do
-		local base, stat, posBuff, negBuff = UnitStat("player", i);
-		retTbl['attributes'][i] = stat;
-	end
-
-	-- Fernkämpfer
-	local base, posBuff, negBuff = UnitRangedAttackPower("player");
-	local attackPower = base + posBuff + negBuff;
-	local speed, lowDmg, hiDmg = UnitRangedDamage("player");
-	retTbl['range'] = {
-		['attackPower'] = attackPower,
-		['speed'] = speed,
-		['lowDmg'] = lowDmg,
-		['hiDmg'] = hiDmg,
-		['hit'] = GetCombatRating(CR_HIT_RANGED),
-		['crit'] = GetCombatRating(CR_CRIT_RANGED),
-		['haste'] = GetCombatRating(CR_HASTE_RANGED),
-		['mastery'] = GetCombatRating(CR_MASTERY)
-	}
-
-	-- Nahkampf
-	local base, posBuff, negBuff = UnitAttackPower("player");
-	local attackPower = base + posBuff + negBuff;
-	local lowDmg, hiDmg, offlowDmg, offhiDmg = UnitDamage("player");
-	retTbl['melee'] = {
-		['attackPower'] = attackPower,
-		['lowDmg'] = lowDmg,
-		['hiDmg'] = hiDmg,
-		['offlowDmg'] = offlowDmg,
-		['offhiDmg'] = offhiDmg,
-		['hit'] = GetCombatRating(CR_HIT_MELEE),
-		['crit'] = GetCombatRating(CR_CRIT_MELEE),
-		['haste'] = GetCombatRating(CR_HASTE_MELEE),
-		['mastery'] = GetCombatRating(CR_MASTERY)
-	}
-
-	-- Zauberer
-	retTbl['caster'] = {
-		['hit'] = GetCombatRating(CR_HIT_SPELL),
-		['crit'] = GetCombatRating(CR_CRIT_SPELL),
-		['haste'] = GetCombatRating(CR_HASTE_SPELL),
-		['mastery'] = GetCombatRating(CR_MASTERY)
-	}
-
-	-- Verteidigung
-	local _, _, armor = UnitArmor("player");
-	retTbl['tank'] = {
-		['armor'] = armor,
-		['dodge'] = GetCombatRating(CR_DODGE),
-		['parry'] = GetCombatRating(CR_PARRY),
-		['block'] = GetCombatRating(CR_BLOCK)
-	}
-
-	private.ILog("Properties DONE...");
+	private.ILog("Stats DONE...");
     return retTbl
 end
------------------------------------------- TITLES
-function private.GetTitlesData()
+
+function private.GetTitlesData() --------- TITLES
     local retTbl = {}
 
     for i = 1, GetNumTitles() do
@@ -115,35 +110,173 @@ function private.GetTitlesData()
     private.ILog("Titles DONE...");
     return retTbl
 end
------------------------------------------- REPUTATION
-function private.GetReputationData()
+
+function private.GetReputationData() ----- REPUTATION
     local retTbl = {}
 
-    for i = 1, GetNumFactions() do
-        local name, _, _, _, _, earnedValue, _, _, _, _, _, _, _ = GetFactionInfo(i)
-        retTbl[i] = {["name"] = name, ["points"] = earnedValue}
-    end
+	local faFactionDataRow = {};
+		faFactionDataRow[1037] = 1;
+		faFactionDataRow[1106] = 2;
+		faFactionDataRow[529]  = 3;
+		faFactionDataRow[1012] = 4;
+		faFactionDataRow[1204] = 5;
+		faFactionDataRow[1177] = 6;
+		faFactionDataRow[1133] = 7;
+		faFactionDataRow[87]   = 8;
+		faFactionDataRow[21]   = 9;
+		faFactionDataRow[910]  = 10;
+		faFactionDataRow[609]  = 11;
+		faFactionDataRow[942]  = 12;
+		faFactionDataRow[909]  = 13;
+		faFactionDataRow[530]  = 14;
+		faFactionDataRow[69]  = 15;
+		faFactionDataRow[1172]  = 16;
+		faFactionDataRow[577]  = 17;
+		faFactionDataRow[930]  = 18;
+		faFactionDataRow[1068]  = 19;
+		faFactionDataRow[1104]  = 20;
+		faFactionDataRow[729]  = 21;
+		faFactionDataRow[369]  = 22;
+		faFactionDataRow[92]  = 23;
+		faFactionDataRow[1134]  = 24;
+		faFactionDataRow[54]  = 25;
+		faFactionDataRow[1158]  = 26;
+		faFactionDataRow[1168]  = 27;
+		faFactionDataRow[1178]  = 28;
+		faFactionDataRow[946]  = 29;
+		faFactionDataRow[1052]  = 30;
+		faFactionDataRow[749]  = 31;
+		faFactionDataRow[47]  = 32;
+		faFactionDataRow[989]  = 33;
+		faFactionDataRow[1090]  = 34;
+		faFactionDataRow[1098]  = 35;
+		faFactionDataRow[978]  = 36;
+		faFactionDataRow[1011]  = 37;
+		faFactionDataRow[93]  = 38;
+		faFactionDataRow[1015]  = 39;
+		faFactionDataRow[1038]  = 40;
+		faFactionDataRow[76]  = 41;
+		faFactionDataRow[1173]  = 42;
+		faFactionDataRow[470]  = 43;
+		faFactionDataRow[349]  = 44;
+		faFactionDataRow[1031]  = 45;
+		faFactionDataRow[1077]  = 46;
+		faFactionDataRow[809]  = 47;
+		faFactionDataRow[911]  = 48;
+		faFactionDataRow[890]  = 49;
+		faFactionDataRow[970]  = 50;
+		faFactionDataRow[730]  = 51;
+		faFactionDataRow[72]  = 52;
+		faFactionDataRow[70]  = 53;
+		faFactionDataRow[932]  = 54;
+		faFactionDataRow[1156]  = 55;
+		faFactionDataRow[933]  = 56;
+		faFactionDataRow[510]  = 57;
+		faFactionDataRow[1135]  = 58;
+		faFactionDataRow[1126]  = 59;
+		faFactionDataRow[1067]  = 60;
+		faFactionDataRow[1073]  = 61;
+		faFactionDataRow[509]  = 62;
+		faFactionDataRow[941]  = 63;
+		faFactionDataRow[1105]  = 64;
+		faFactionDataRow[990]  = 65;
+		faFactionDataRow[934]  = 66;
+		faFactionDataRow[935]  = 67;
+		faFactionDataRow[1094]  = 68;
+		faFactionDataRow[1119]  = 69;
+		faFactionDataRow[1124]  = 70;
+		faFactionDataRow[1064]  = 71;
+		faFactionDataRow[967]  = 72;
+		faFactionDataRow[1091]  = 73;
+		faFactionDataRow[1171]  = 74;
+		faFactionDataRow[59]  = 75;
+		faFactionDataRow[947]  = 76;
+		faFactionDataRow[81]  = 77;
+		faFactionDataRow[576]  = 78;
+		faFactionDataRow[922]  = 79;
+		faFactionDataRow[68]  = 80;
+		faFactionDataRow[1050]  = 81;
+		faFactionDataRow[1085]  = 82;
+		faFactionDataRow[889]  = 83;
+		faFactionDataRow[1174]  = 84;
+		faFactionDataRow[589]  = 85;
+		faFactionDataRow[270]  = 86;
+
+	for blizzID, listID in pairs(faFactionDataRow) do
+		local name, _, _, barMin, barMax, barValue = GetFactionInfoByID(blizzID)
+		local _, _, _, _, _, earnedValue = GetFactionInfo(listID)
+
+		retTbl[blizzID] = earnedValue
+	end
 
     private.ILog("Reputation DONE...");
     return retTbl;
 end
------------------------------------------- CURRENCIES
-function private.GetCurrenciesData()
+
+function private.GetCurrenciesData() ----- CURRENCIES
     local retTbl = {}
 
-    for i = 1, GetCurrencyListSize() do
-        local name, _, _, _, _, count, _, _, _ = GetCurrencyListInfo(i)
-		retTbl[i] = {['name'] = name, ['count'] = count};
-    end
+	for i = 1, GetCurrencyListSize() do
+		local _, isHeader, _, _, _, count = GetCurrencyListInfo(i)
+		local link = GetCurrencyListLink(i)
+
+		if not isHeader then
+			local id = link:match("currency:(%d+)")
+			retTbl[id] = count
+		end
+	end
 
 	private.ILog("Currencies DONE...");
     return retTbl;
 end
------------------------------------------- TALENTS
-function private.GetTalentsData()
+
+function private.GetTalentsData() -------- TALENTS
 	local retTbl = {}
 
-	local talentGroupName = 'primary';
+	local specID	= 0			-- uniqueID of specType for localization, will be changed dynamicly
+
+	for talentGroup = 1, 2 do -- ( PRIMARY / SECONDARY )
+		if (talentGroup == 2) then specType = 'secondary'; specID = 0; end
+
+		for tabIndex = 1, 3 do -- check each Tab of Spec
+			local id, _, _, _, pointsSpent = GetTalentTabInfo(tabIndex, false, false, talentGroup)
+
+			if pointsSpent and (pointsSpent >= 10) then -- get the unique id of the main/sec spec
+				specID = id
+				retTbl[specID] = {['glyphs'] = {}}
+			end
+		end
+
+		if (specID > 0) then -- if we have a spec, checkout...
+			for tabIndex = 1, 3 do -- each tab
+				local id = GetTalentTabInfo(tabIndex, false, false, talentGroup)
+				retTbl[specID][id] = {}
+
+				for talentIndex = 1, GetNumTalents(tabIndex) do -- each talent
+					local name, icon, row, column, rank, maxRank = GetTalentInfo(tabIndex, talentIndex, false, false, specID)
+					retTbl[specID][id][talentIndex] = {
+						['name']	= name,
+						['tier']	= row,
+						['column']	= column,
+						['rank']	= rank,
+						['maxRank'] = maxRank,
+					}
+				end
+			end
+
+			for glyphSocket = 1, GetNumGlyphSockets() do -- get the glyphs
+				local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon = GetGlyphSocketInfo(glyphSocket, talentGroup)
+
+				if enabled and glyphSpell then
+					retTbl[specID]['glyphs'][glyphSocket] = glyphSpell
+				end
+			end
+
+		end
+	end
+
+--[[
+
 
 	for talentGroup = 1, 2 do -- loop 1 = PRIMARY, 2 = SECONDARY
 		if (talentGroup == 2) then talentGroupName = 'secondary'; end
@@ -183,25 +316,32 @@ function private.GetTalentsData()
 		end
 	end
 
+	]]
+
 	private.ILog("Talents DONE...");
     return retTbl;
 end
------------------------------------------- PROFESSIONS
-function private.GetProfessionsData()
-	local retTbl = {}
+
+function private.GetProfessionsData() ---- PROFESSIONS
+	local retTbl = {['primary'] = {}, ['secondary'] = {}}
 
 	local profIndex = {GetProfessions()}
 
-	for i = 1, 6, 1 do
-		local name, _, skillLevel, maxSkillLevel, _, _, skillLine, _, specializationIndex = GetProfessionInfo(profIndex[i]);
-		retTbl[skillLine] = {['name'] = name, ['skillLevel'] = skillLevel, ['maxSkillLevel'] = maxSkillLevel, ['spec'] = specializationIndex}
+	for profession, listIndex in pairs(profIndex) do
+		if not (profession > 2) then
+			local _, _, skillLevel, _, _, _, skillLine = GetProfessionInfo(listIndex);
+			retTbl['primary'][skillLine] = skillLevel
+		else
+			local _, _, skillLevel, _, _, _, skillLine = GetProfessionInfo(listIndex);
+			retTbl['secondary'][skillLine] = skillLevel
+		end
 	end
 
 	private.ILog("Profesions DONE...");
     return retTbl;
 end
------------------------------------------- MOUNTS
-function private.GetMountsData()
+
+function private.GetMountsData() --------- MOUNTS
     local retTbl = {}
 
     for i = 1, GetNumCompanions("MOUNT") do
@@ -212,8 +352,8 @@ function private.GetMountsData()
     private.ILog("Mounts DONE...");
     return retTbl;
 end
------------------------------------------- CRITTERS
-function private.GetCrittersData()
+
+function private.GetCrittersData() ------- CRITTERS
     local retTbl = {}
 
     for i = 1, GetNumCompanions("CRITTER") do
@@ -224,8 +364,8 @@ function private.GetCrittersData()
     private.ILog("Critters DONE...");
     return retTbl;
 end
------------------------------------------- ACHIEVEMENTS
-function private.GetAchievementsData()
+
+function private.GetAchievementsData() --- ACHIEVEMENTS
     local retTbl = {}
 
 	-- Later we need to scan which category has parrent catgegory with GetCategoryInfo();
@@ -256,8 +396,8 @@ function private.GetAchievementsData()
     private.ILog("Achievements DONE...");
     return retTbl;
 end
------------------------------------------- STATISTICS
-function private.GetStatisticsData()
+
+function private.GetStatisticsData() ----- STATISTICS
     local retTbl = {}
 
 	-- Later we need to scan which category has parrent catgegory with GetCategoryInfo();
@@ -276,9 +416,21 @@ function private.GetStatisticsData()
     private.ILog("Statistics DONE...");
     return retTbl;
 end
------------------------------------------- TITLE
 
+function private.GetInventoryData() ------ INVENTORY
+	local retTbl = { ['equiped'] = {}, ['bags'] = {}, ['bank'] = {} }
 
+	---- http://wowwiki.wikia.com/Equipment_slot  --icons undso .. voll toll !!!
+	for i = 1, 19, 1 do
+		local link = GetInventoryItemLink("player", i)
+		if link then
+			retTbl['equiped'][i] = link
+		end
+	end
+
+    private.ILog("Inventory DONE...");
+    return retTbl;
+end
 
 
 --------------------------------------------------
@@ -287,21 +439,20 @@ end
 function private.CreateCharDump()
 	private.dmp = {};
 
-	private.dmp.global		= private.trycall(private.GetGlobalInfo, private.ErrLog)		or {};
-	private.dmp.properties	= private.trycall(private.GetPropertiesData, private.ErrLog)	or {};
-	private.dmp.titles		= private.trycall(private.GetTitlesData, private.ErrLog)		or {};
-	private.dmp.reputation	= private.trycall(private.GetReputationData, private.ErrLog)	or {};
-	private.dmp.currencies	= private.trycall(private.GetCurrenciesData, private.ErrLog)	or {};
-	private.dmp.talents		= private.trycall(private.GetTalentsData, private.ErrLog)		or {};
-	private.dmp.professions = private.trycall(private.GetProfessionsData, private.ErrLog)	or {};
-	private.dmp.mounts		= private.trycall(private.GetMountsData, private.ErrLog)		or {};
-	private.dmp.critters	= private.trycall(private.GetCrittersData, private.ErrLog)		or {};
-	private.dmp.achievements = private.trycall(private.GetAchievementsData, private.ErrLog)	or {};	-- Testphase
-	private.dmp.statistics	= private.trycall(private.GetStatisticsData, private.ErrLog)	or {};
---D	private.dmp.quest       = private.trycall(private.GetQuestData, private.ErrLog)			or {};	-- Development
---D	private.dmp.inventory   = private.trycall(private.GetIData, private.ErrLog)				or {};	-- Development
+	private.dmp.global		= private.trycall(private.GetGlobalInfo, private.ErrLog)		or {};		-- it works!
+	private.dmp.stats		= private.trycall(private.GetStatsData, private.ErrLog)			or {};		-- it works!
+	private.dmp.titles		= private.trycall(private.GetTitlesData, private.ErrLog)		or {};		-- it works!
+	private.dmp.reputation	= private.trycall(private.GetReputationData, private.ErrLog)	or {};		-- it works!
+	private.dmp.currencies	= private.trycall(private.GetCurrenciesData, private.ErrLog)	or {};		-- it works!
+	private.dmp.talents		= private.trycall(private.GetTalentsData, private.ErrLog)		or {};		-- it works!
+	private.dmp.professions = private.trycall(private.GetProfessionsData, private.ErrLog)	or {};		-- it works!
+	private.dmp.mounts		= private.trycall(private.GetMountsData, private.ErrLog)		or {};		-- it works!
+	private.dmp.critters	= private.trycall(private.GetCrittersData, private.ErrLog)		or {};		-- it works!
+--	private.dmp.achievements = private.trycall(private.GetAchievementsData, private.ErrLog)	or {};	-- Development
+--	private.dmp.statistics	= private.trycall(private.GetStatisticsData, private.ErrLog)	or {}; -- implement into achievements
+	private.dmp.inventory   = private.trycall(private.GetInventoryData, private.ErrLog)		or {};		-- it works!
 
-    return myJSON.encode(private.dmp);
+	return myJSON.encode(private.dmp);
 end
 
 
@@ -360,35 +511,6 @@ function private.GetSpellData()
     return retTbl;
 end
 
-function private.GetIData()
-    local retTbl = {}
-
-    for i = 1, 74 do
-        itemLink = GetInventoryItemLink("player", i)
-        if itemLink then
-            count = GetInventoryItemCount("player",i)
-            for entry, chant, Gem1, Gem2, Gem3,unk1,unk2,unk3,lvl1 in string.gmatch(itemLink,".-Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+).*") do
-                retTbl["0000:"..i] =  {["I"] = entry, ["C"] = count, ["G1"] = Gem1, ["G2"] = Gem2, ["G3"] = Gem3};
-            end
-        end
-    end
-
-    for bag = 0, 11 do
-        for slot = 1, GetContainerNumSlots(bag) do
-            ItemLink = GetContainerItemLink(bag, slot)
-            if ItemLink then
-                local texture, count, locked, quality, readable = GetContainerItemInfo(bag, slot);
-                local p = bag + 1000;
-                for entry, chant, Gem1, Gem2, Gem3, unk1, unk2, unk3, lvl1 in string.gmatch(ItemLink,".-Hitem:(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+):(%d+).*") do
-                    retTbl[p..":"..slot] = {["I"] = entry, ["C"] = count, ["G1"] = Gem1, ["G2"] = Gem2, ["G3"] = Gem3};
-                end
-            end
-        end
-    end
-
-    private.ILog("Inventory DONE...");
-    return retTbl;
-end
 
 ]]
 
