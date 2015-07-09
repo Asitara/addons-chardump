@@ -19,7 +19,7 @@ function private.GetGlobalInfo() --------- GLOBAL
 	retTbl.level            = UnitLevel("player");
 	retTbl.health			= UnitHealthMax("player");
 	retTbl.power			= UnitPowerMax("player");
-	retTbl.date				= notfalls time()
+	retTbl.date				= time()
 	retTbl.ilevel_equipped	= il_eq;
 	retTbl.ilevel_overall	= il_all;
 	retTbl.money            = GetMoney();
@@ -206,7 +206,7 @@ function private.GetReputationData() ----- REPUTATION
 		local name, _, _, barMin, barMax, barValue = GetFactionInfoByID(blizzID)
 		local _, _, _, _, _, earnedValue = GetFactionInfo(listID)
 
-		retTbl[blizzID] = earnedValue
+		retTbl[tostring(blizzID)] = earnedValue
 	end
 
     private.ILog("Reputation DONE...");
@@ -231,9 +231,10 @@ function private.GetCurrenciesData() ----- CURRENCIES
 end
 
 function private.GetTalentsData() -------- TALENTS
-	local retTbl = {}
+	local retTbl = {['primary'] = '0', ['secondary'] = '0', ['selected'] = GetActiveTalentGroup()}
 
 	local specID	= 0			-- uniqueID of specType for localization, will be changed dynamicly
+	local specType	= 'primary'
 
 	for talentGroup = 1, 2 do -- ( PRIMARY / SECONDARY )
 		if (talentGroup == 2) then specType = 'secondary'; specID = 0; end
@@ -243,22 +244,24 @@ function private.GetTalentsData() -------- TALENTS
 
 			if pointsSpent and (pointsSpent >= 10) then -- get the unique id of the main/sec spec
 				specID = id
-				retTbl[specID] = {['glyphs'] = {}}
+				if retTbl['selected'] == talentGroup then retTbl['selected'] = tostring(specID); end
+				retTbl[specType] = tostring(specID)
+				retTbl[tostring(specID)] = {['glyphs'] = {}}
 			end
 		end
 
 		if (specID > 0) then -- if we have a spec, checkout...
 			for tabIndex = 1, 3 do -- each tab
 				local id = GetTalentTabInfo(tabIndex, false, false, talentGroup)
-				retTbl[specID][id] = {}
+				retTbl[tostring(specID)][tostring(id)] = {}
 
 				for talentIndex = 1, GetNumTalents(tabIndex) do -- each talent
-					local name, icon, row, column, rank, maxRank = GetTalentInfo(tabIndex, talentIndex, false, false, specID)
-					retTbl[specID][id][talentIndex] = {
+					local name, _, row, column, currRank, maxRank = GetTalentInfo(tabIndex, talentIndex, false, false, specID)
+					retTbl[tostring(specID)][tostring(id)][talentIndex] = {
 						['name']	= name,
 						['tier']	= row,
 						['column']	= column,
-						['rank']	= rank,
+						['rank']	= currRank,
 						['maxRank'] = maxRank,
 					}
 				end
@@ -268,7 +271,7 @@ function private.GetTalentsData() -------- TALENTS
 				local enabled, glyphType, glyphTooltipIndex, glyphSpell, icon = GetGlyphSocketInfo(glyphSocket, talentGroup)
 
 				if enabled and glyphSpell then
-					retTbl[specID]['glyphs'][glyphSocket] = glyphSpell
+					retTbl[tostring(specID)]['glyphs'][glyphSocket] = glyphSpell
 				end
 			end
 
@@ -330,10 +333,10 @@ function private.GetProfessionsData() ---- PROFESSIONS
 	for profession, listIndex in pairs(profIndex) do
 		if not (profession > 2) then
 			local _, _, skillLevel, _, _, _, skillLine = GetProfessionInfo(listIndex);
-			retTbl['primary'][skillLine] = skillLevel
+			retTbl['primary'][tostring(skillLine)] = skillLevel
 		else
 			local _, _, skillLevel, _, _, _, skillLine = GetProfessionInfo(listIndex);
-			retTbl['secondary'][skillLine] = skillLevel
+			retTbl['secondary'][tostring(skillLine)] = skillLevel
 		end
 	end
 
@@ -452,6 +455,7 @@ function private.CreateCharDump()
 --	private.dmp.statistics	= private.trycall(private.GetStatisticsData, private.ErrLog)	or {}; -- implement into achievements
 	private.dmp.inventory   = private.trycall(private.GetInventoryData, private.ErrLog)		or {};		-- it works!
 
+	--return private.dmp;
 	return myJSON.encode(private.dmp);
 end
 
